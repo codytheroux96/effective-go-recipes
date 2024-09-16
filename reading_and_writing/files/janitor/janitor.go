@@ -7,8 +7,10 @@ package janitor
 import (
 	"compress/gzip"
 	"io"
+	"io/fs"
 	"log"
 	"os"
+	"path"
 	"time"
 )
 
@@ -60,3 +62,19 @@ func shouldCompress(path string, maxAge time.Duration) bool {
 }
 
 // filesToCompress will return a list of files that are older than a given time span in a directory
+func filesToCompress(dir string, maxAge time.Duration) ([]string, error) {
+	root := os.DirFS(dir)
+	logFiles, err := fs.Glob(root, "*.log")
+	if err != nil {
+		return nil, err
+	}
+
+	var names []string
+	for _, src := range logFiles {
+		name := path.Join(dir, src)
+		if shouldCompress(name, maxAge) {
+			names = append(names, name)
+		}
+	}
+	return names, nil
+}
