@@ -109,7 +109,7 @@ func fileSHA1(filename string) (string, error) {
 
 // Func to compare SHA1 signatures
 func sameSig(file1, file2 string) (bool, error) {
-	sig1, err := fileSHA1(file1) 
+	sig1, err := fileSHA1(file1)
 	if err != nil {
 		return false, err
 	}
@@ -120,4 +120,34 @@ func sameSig(file1, file2 string) (bool, error) {
 	}
 
 	return sig1 == sig2, nil
+}
+
+// compressFiles will compress only files older than the time span - in this case, 30 days
+func compressFiles(rootDir string, maxAge time.Duration) error {
+	files, err := filesToCompress(rootDir, maxAge)
+	if err != nil {
+		return err
+	}
+
+	for _, src := range files {
+		dest := src + ".gz"
+		if err := gzCompress(src, dest); err != nil {
+			return fmt.Errorf("%q: %w", src, err)
+		}
+
+		match, err := sameSig(src, dest)
+		if err != nil {
+			return err
+		}
+
+		if !match {
+			return fmt.Errorf("%q <-> %q: signature doesn't match", src, dest)
+		}
+
+		if err := os.Remove(src); err != nil {
+			log.Printf("warning: %q: can't delete - %s", src, err)
+		}
+	}
+
+	return nil
 }
