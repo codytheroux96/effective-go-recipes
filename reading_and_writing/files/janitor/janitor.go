@@ -6,6 +6,8 @@ package janitor
 
 import (
 	"compress/gzip"
+	"crypto/sha1"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -77,4 +79,30 @@ func filesToCompress(dir string, maxAge time.Duration) ([]string, error) {
 		}
 	}
 	return names, nil
+}
+
+// Checking the file was compressed without issues by comparing the file SHA1 signature
+func fileSHA1(filename string) (string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", nil
+	}
+	defer file.Close()
+
+	var r io.Reader = file
+	if path.Ext(filename) == ".gz" {
+		var err error
+		r, err = gzip.NewReader(r)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	w := sha1.New()
+	if _, err := io.Copy(w, r); err != nil {
+		return "", err
+	}
+
+	sig := fmt.Sprintf("%x", w.Sum(nil))
+	return sig, nil
 }
