@@ -106,3 +106,18 @@ func fileSHA1(filename string) (string, error) {
 	sig := fmt.Sprintf("%x", w.Sum(nil))
 	return sig, nil
 }
+
+// Func to compare SHA1 signatures
+func sameSig(file1, file2 string) (bool, error) {
+	sig1, err := fileSHA1(file1) 
+	if err != nil {
+		return false, err
+	}
+
+	sig2, err := fileSHA1(file2)
+	if err != nil {
+		return false, nil
+	}
+
+	return sig1 == sig2, nil
+}
