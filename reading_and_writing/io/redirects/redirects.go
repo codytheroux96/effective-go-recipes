@@ -8,3 +8,31 @@ HTTP redirect directive
 */
 
 package redirects
+
+import (
+	"bufio"
+	"io"
+	"strings"
+)
+
+// numRedirects gets an io.Reader and returns the total number of lines and the number of lines that have an HTTP redirect directive
+func numRedirects(r io.Reader) (int, int, error) {
+	s := bufio.NewScanner(r)
+	nLines, nRedirects := 0, 0
+	for s.Scan() {
+		nLines++
+		// Example:
+		// 203.252.212.44 - - [01/Aug/1995:03:45:47 -0400]
+		// "GET /ksc.html HTTP/1.0" 200 7200
+		fields := strings.Fields(s.Text())
+		code := fields[len(fields)-2] // code is one before last
+		if code[0] == '3'{
+			nRedirects++
+		}
+	}
+
+	if err := s.Err(); err != nil {
+		return -1, -1, err
+	}
+	return nLines, nRedirects, nil
+}
