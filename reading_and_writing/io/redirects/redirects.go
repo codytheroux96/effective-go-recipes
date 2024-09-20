@@ -11,7 +11,12 @@ package redirects
 
 import (
 	"bufio"
+	"compress/gzip"
+	"fmt"
 	"io"
+	"log"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -35,4 +40,37 @@ func numRedirects(r io.Reader) (int, int, error) {
 		return -1, -1, err
 	}
 	return nLines, nRedirects, nil
+}
+
+func redirect() {
+	// Finding out what log files are in the logs directory
+	matches, err := filepath.Glob("logs/http-*.log")
+	if err != nil {
+		log.Fatalf("error: %s", err)
+	}
+
+	// iterating over files and reading them one by one for reading
+	nLines, nRedirects := 0, 0
+	for _, fileName := range matches {
+		file, err := os.Open(fileName)
+		if err != nil {
+			log.Fatalf("error: %s", err)
+		}
+
+		var r io.Reader = file 
+		if strings.HasSuffix(fileName, ".gz") {
+			r, err = gzip.NewReader(r)
+			if err != nil {
+				log.Fatalf("%q - %v", fileName, err)
+			}
+		}
+
+		nl, nr, err := numRedirects(r)
+		if err != nil {
+			log.Fatalf("%q - %v", fileName, err)
+		}
+		nLines += nl
+		nRedirects += nr
+	}
+	fmt.Printf("%d redirects in %d lines\n", nRedirects, nLines)
 }
