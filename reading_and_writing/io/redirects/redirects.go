@@ -31,7 +31,7 @@ func numRedirects(r io.Reader) (int, int, error) {
 		// "GET /ksc.html HTTP/1.0" 200 7200
 		fields := strings.Fields(s.Text())
 		code := fields[len(fields)-2] // code is one before last
-		if code[0] == '3'{
+		if code[0] == '3' {
 			nRedirects++
 		}
 	}
@@ -57,7 +57,7 @@ func redirect() {
 			log.Fatalf("error: %s", err)
 		}
 
-		var r io.Reader = file 
+		var r io.Reader = file
 		if strings.HasSuffix(fileName, ".gz") {
 			r, err = gzip.NewReader(r)
 			if err != nil {
